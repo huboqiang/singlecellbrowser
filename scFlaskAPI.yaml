@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: scflaskapi
+spec:
+  replicas: 1
+  template:
+    metadata:
+      namespace: default
+      labels:
+        app: scflaskapi
+    spec:
+      containers:
+      - command:
+        - bash
+        - -c
+        - python main.py
+        env:
+        - name: PAAS_APP_NAME
+          value: flask
+        - name: PAAS_NAMESPACE
+          value: default
+        - name: PAAS_APP_NAME
+          value: flask
+        - name: PAAS_NAMESPACE
+          value: default
+        - name: CLUSTER_IP
+          value: my_cluster_ip
+        - name: CLUSTER_IP_MONGO
+          value: my_mongo_ip
+        - name: CLUSTER_MONGO_USER
+          value: my_mongo_user
+        - name: CLUSTER_MONGO_PASSWORD
+          value: my_mongo_password
+        - name: CLUSTER_MONGO_TABLE
+          value: my_mongo_table
+        - name: CLUSTER_MONGO_PORT
+          value: my_mongo_port
+        - name: CLUSTER_API_PORT
+          value: my_cluster_api_port
+        - name: CELLTYPE_FILE
+          value: "./Matrix_tSNE_type5.v2.csv"
+        - name: CELLTPM_FILE
+          value: "./Merge.TPM.header.tsv"
+        image: IP:PORT/PROJECT/NAME:VER
+        name: flaskapi
+        ports:
+        - containerPort: 5000
+          hostPort: 5000
+        volumeMounts:
+        - mountPath: /root
+          name: genomeobs
+      volumes:
+      - name: genomeobs
+        persistentVolumeClaim:
+          claimName: PVC_NAME
+

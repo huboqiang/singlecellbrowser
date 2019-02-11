@@ -1,0 +1,277 @@
+<head>
+  <!-- Plotly.js -->
+
+</head>
+
+<body>
+  <!-- Plotly chart will be drawn inside this DIV -->
+  <label for="inputGene">Input Genes:</label>
+  <input type="text" id="autocomplete">
+  <button onclick="PlotGene()">Submit</button>
+  <div id="boxPlotStage" class="boxPlotStage"></div>
+
+
+  <div id="main" style="background-color:#FFFFFF;height=40%;width:60%;float:left;">
+    <div id="myDiv0"></div>
+  </div>
+
+  <div id="sup" style="background-color:#FFFFFF;height=40%;width:40%;float:left;">
+    <div id="myDiv1"></div>
+    <div id="myDiv2"></div>
+  </div>
+
+  <!--<script type="text/javascript" src="http://qcloud-1252801552.file.myqcloud.com/plotly-latest.min.js"></script>-->
+  <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script type="text/javascript" src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdn.staticfile.org/d3/3.5.17/d3.min.js"></script>
+  <script type="text/javascript" src="http://libs.baidu.com/jqueryui/1.8.22/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="http://qcloud-1252801552.file.myqcloud.com/geneName.js"></script>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+  <script>
+    $('#autocomplete').autocomplete({
+      //req是用户输入的字符，responseFn是返回给用户的列表.
+      source: function(req, responseFn) {
+        var term = $.ui.autocomplete.escapeRegex(req.term),
+          //使用正则表达式去匹配谁首字幕，'i'表示使用大小写敏感匹配
+          matcher = new RegExp('^' + term, 'i'),
+          //循环options并只选择满足的
+          matches = $.grep(options, function(item) {
+            return matcher.test(item);
+          });
+
+        responseFn(matches.slice(0, 10));
+      }
+    });
+  </script>
+  <!-- Plotly.js -->
+
+
+
+
+  <script>
+    function PlotGene() {
+      var URL_BASE = "http://{{CLUSTER_IP}}:{{CLUSTER_API_PORT}}/gene/";
+      var URL_BASE_BOX = "http://{{CLUSTER_IP}}:{{CLUSTER_API_PORT}}/geneBox/";
+
+      function update_url() {
+        return URL_BASE + document.getElementById("autocomplete").value;
+      }
+
+      function updateBox_url() {
+        return URL_BASE_BOX + document.getElementById("autocomplete").value;
+      }
+
+
+      length = 100
+      colorList = d3.scale.linear().domain([1, length])
+        .interpolate(d3.interpolateHcl)
+        .range([d3.rgb("#B1B1B1"), d3.rgb('#2200FF')]);
+
+      Plotly.d3.csv(update_url(), function(err, rows) {
+        var Types = ["Amacrine", "Bipolar", "Blood", "Fibroblast", "Horizontal", "Microglia", "Muller", "Photoreceptor", "RGC", "RPC", "RPE", 'Undef'];
+        var Stages = [ '5W', '6W', '7W', '8W', '9W', '11W', '13W', '17W', '23W', '24W'];
+        M_colorListType = {
+          "Amacrine": "#8dd3c7",
+          "Bipolar": "#ffffb3",
+          "Blood": "#bebada",
+          "Fibroblast": "#fb8072",
+          "Horizontal": "#80b1d3",
+          "Microglia": "#fdb462",
+          "Muller": "#b3de69",
+          "Photoreceptor": "#fccde5",
+          "RGC": "#d9d9d9",
+          "RPC": "#bc80bd",
+          "RPE": "#ccebc5",
+          "Undef": "#333333",
+
+        }
+        M_colorListStage = {
+         "5W" :   "#5E4FA2",
+         "6W" :   "#3682BA",
+         "7W" :   "#5CB7A9",
+         "8W" :   "#D0EC9C",
+         "9W" :   "#F3FAAD",
+         "11W" :   "#FEF0A7",
+         "13W" :   "#FDCD7B",
+         "17W" :   "#FA9C58",
+         "23W" :   "#EE6445",
+         "24W" :   "#D0384D"
+        }
+
+        function unpack(rows, key) {
+          return rows.map(function(row) {
+            return row[key];
+          });
+        }
+
+        function TPMColor(strinput) {
+          var TPMMax = 1000;
+          var v0 = parseFloat(strinput, 2);
+          var v1 = Math.log2(v0 / 100 + 1);
+          var v2 = Math.log2(TPMMax / 100 + 1);
+          idx = parseInt((v1 / v2) * 100);
+          if (idx >= 100) {
+            idx = 99;
+          }
+          return colorList(idx);
+        }
+        var dataTPM = Types.map(function(type) {
+          var rowsFiltered = rows.filter(function(row) {
+            return (row.type === type);
+          });
+          return {
+            mode: 'markers',
+            x: unpack(rowsFiltered, 'PC1'),
+            y: unpack(rowsFiltered, 'PC2'),
+            text: unpack(rowsFiltered, 'sam'),
+            xaxis: 'x1',
+            yaxis: 'y1',
+            marker: {
+              sizemode: 'area',
+              size: 5,
+              color: unpack(rowsFiltered, 'TPM').map(TPMColor),
+            }
+          };
+        });
+
+        var dataType = Types.map(function(type) {
+          var rowsFiltered = rows.filter(function(row) {
+            return (row.type === type);
+          });
+          return {
+            mode: 'markers',
+            name: type,
+            x: unpack(rowsFiltered, 'PC1'),
+            y: unpack(rowsFiltered, 'PC2'),
+            text: unpack(rowsFiltered, 'sam'),
+            xaxis: 'x1',
+            yaxis: 'y1',
+            marker: {
+              sizemode: 'area',
+              size: 5,
+            }
+          };
+        });
+        var dataStage = Stages.map(function(stage) {
+          var rowsFiltered = rows.filter(function(row) {
+            return (row.stage === stage);
+          });
+          return {
+            mode: 'markers',
+            name: stage,
+            x: unpack(rowsFiltered, 'PC1'),
+            y: unpack(rowsFiltered, 'PC2'),
+            text: unpack(rowsFiltered, 'sam'),
+            xaxis: 'x2',
+            yaxis: 'y2',
+            marker: {
+              symbol: 'circle',
+              size: 5,
+              color: M_colorListStage[unpack(rowsFiltered, 'stage')[0]],
+            }
+          };
+        });
+        var layout0 = {
+          xaxis1: {
+            domain: [0, 1],
+            anchor: "x2",
+            title: 'PC1'
+          },
+          yaxis1: {
+            domain: [0, 1],
+            anchor: "y2",
+            title: 'PC2',
+          },
+          margin: {
+            l: 30,
+            r: 30,
+            b: 30,
+            t: 30,
+            pad: 4
+          },
+          hovermode: 'closest',
+          height: 800
+        };
+        var layout1 = {
+          xaxis1: {
+            domain: [0, 1],
+            anchor: "x0",
+            title: 'PC1'
+          },
+          yaxis1: {
+            domain: [0, 1],
+            anchor: "y1",
+            title: 'PC2',
+          },
+          margin: {
+            l: 30,
+            r: 30,
+            b: 30,
+            t: 30,
+            pad: 4
+          },
+          hovermode: 'closest',
+          height: 400
+        };
+        var layout2 = {
+          xaxis1: {
+            domain: [0, 1],
+            anchor: "x2",
+            title: 'PC1'
+          },
+          yaxis1: {
+            domain: [0, 1],
+            anchor: "y2",
+            title: 'PC2',
+          },
+          margin: {
+            l: 30,
+            r: 30,
+            b: 30,
+            t: 30,
+            pad: 4
+          },
+          hovermode: 'closest',
+          height: 400
+        };
+        Plotly.newPlot('myDiv0', dataTPM, layout0, {
+          showLink: false
+        });
+        Plotly.newPlot('myDiv1', dataType, layout1, {
+          showLink: false
+        });
+        Plotly.newPlot('myDiv2', dataStage, layout2, {
+          showLink: false
+        });
+      });
+      /* Boxplot */
+      var urlBox = updateBox_url();
+      d3.select("#boxPlotStage").selectAll("*").remove();
+      var json = (function() {
+        var json = null;
+        $.ajax({
+          'async': false,
+          'global': false,
+          'url': urlBox,
+          'dataType': "json",
+          'success': function(data) {
+            json = data;
+          }
+        });
+        return json;
+      })();
+      var data = json['results'];
+      var layout = {
+        yaxis: {
+          title: 'TPM',
+          zeroline: false
+        },
+        boxmode: 'group'
+      };
+      Plotly.newPlot('boxPlotStage', data, layout);
+    }
+  </script>
+</body>
+

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scflaskapisvc
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      nodePort: CLUSTER_API_PORT
+      name: api
+  selector:
+    app: scflaskapi

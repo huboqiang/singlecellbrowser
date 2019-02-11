@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodbscflasksvc
+spec:
+  type: NodePort
+  ports:
+    - port: 27017
+      nodePort: CLUSTER_MONGO_PORT
+  selector:
+    app: mongodbscflask

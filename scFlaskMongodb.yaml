@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: mongodbscflask
+spec:
+  replicas: 1 
+  template:
+    metadata:
+      namespace: default
+      labels:
+        app: mongodbscflask
+    spec:
+      containers:
+      - name:  mongodb
+        image: swr.cn-north-1.myhuaweicloud.com/hubqgene/mongo:3.4.6
+        command:
+          - bash
+          - -c
+          - "mongod --auth --dbpath /data/db2 "
+        env:
+        - name: CLUSTER_IP
+          value: my_cluster_ip
+        - name: CLUSTER_IP_MONGO
+          value: my_mongo_ip
+        - name: CLUSTER_MONGO_USER
+          value: my_mongo_user
+        - name: CLUSTER_MONGO_PASSWORD
+          value: my_mongo_password
+        - name: CLUSTER_MONGO_PORT
+          value: my_mongo_port
+        - name: CLUSTER_API_PORT
+          value: my_api_port
+        ports:
+        - containerPort: 27017
+          hostPort: 27017
+        volumeMounts:
+        - mountPath: /data
+          name: genomeobs
+      volumes:
+      - name: genomeobs
+        persistentVolumeClaim:
+          claimName: PVC_NAME
