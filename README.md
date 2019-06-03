@@ -1,6 +1,6 @@
 # single cell results browser:
 
-See [http://huboqiang.github.io/humanretina.html](http://huboqiang.github.io/humanretina.html) for an example.
+See [http://huboqiang.github.io/humanretina.html](http://huboqiang.cn/humanretina.html) for an example.
 
 ## upload your own data
 
